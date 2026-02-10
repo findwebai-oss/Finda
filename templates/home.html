@@ -110,14 +110,28 @@
         <!-- WELCOME SCREEN -->
         <div class="welcome-screen" id="welcome-screen">
             <h1>👋 Merhaba!</h1>
-            <p>Size nasıl yardımcı olabilirim?</p>
+            <p class="welcome-title">Finda AI’ye hoş geldin.</p>
+            <p class="welcome-subtitle">Ne aramak istiyorsun? Ürünleri veya uçuşları doğal dilde sorabilirsin.</p>
+            <!-- <div class="welcome-examples">
+                <p class="welcome-examples-title"></p>
+                <p>📱 iPhone 14 en ucuz nerede?</p>
+                <p>💻 16 GB RAM laptop öner</p>
+                <p>🎧 Gürültü engelleyici kulaklık</p>
+                <p>✈️ İstanbul → Ankara </p>
+            </div> -->
+            <!-- <p class="welcome-hint">Aşağıdan bir kategori seçebilir veya direkt yazmaya başlayabilirsin:</p> -->
             <div class="suggestions">
                 <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='en iyi telefon modelleri';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">📱 Telefon</div>
                 <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='ucuz laptop';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">💻 Laptop</div>
                 <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='kulaklık';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">🎧 Kulaklık</div>
                 <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='uçuş ara';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">✈️ Uçuş</div>
             </div>
+
         </div>
+          
+          
+           
+           
 
         <div id="flow-container"></div>
         <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
@@ -126,7 +140,6 @@
                 <div class="loading-text">Yükleniyor...</div>
             </div>
         </div>
-
         <!-- PRODUCT SEARCH PROMPT -->
         <div class="prompt-container">
             <form method="post" id="product-form" action="{% url 'home' %}">
@@ -138,12 +151,15 @@
                         <button type="button">Resim ile arama</button>
                     </div>
                 </div>
-                <input type="text" name="query" id="product-search-input" placeholder="Find A flight,phone,product...">
+                <input type="text" name="query" id="product-search-input" placeholder="Find  a   flight ,phone ,headphones and more..." >
                 <button type="submit">Gönder</button>
+            
             </form>
+          
         </div>
-    </div>
+            
 
+    </div>
     <!-- MODAL -->
     <div id="productModal" class="modal">
         <div class="modal-content">
