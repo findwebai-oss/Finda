@@ -1,0 +1,389 @@
+ <!DOCTYPE html>
+{% load static %}
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finda AI - Akıllı Arama</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Single page flow */
+        .section-box { margin: 20px 0; }
+
+        /* Product Cards - Minimal */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 16px; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #f0f0f0; transition: all 0.2s; }
+        .product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); border-color: #2563eb; }
+        .product-image { width: 100%; height: 140px; object-fit: cover; background: #f5f5f5; display: flex; align-items: center; justify-content: center; }
+        .product-image img { width: 100%; height: 100%; object-fit: cover; }
+        .product-info { padding: 10px; }
+        .product-title { font-size: 13px; font-weight: 600; color: #1f2937; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { font-size: 14px; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
+        .product-store { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+        .product-rating { font-size: 12px; color: #f59e0b; margin-bottom: 8px; }
+        .product-link { display: inline-block; padding: 6px 12px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+        .product-link:hover { background: #1d4ed8; }
+        .product-search-btn { display: inline-block; margin-left: 8px; padding: 6px 10px; background: #eef2ff; color: #1f2937; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; border: 1px solid #e6e9f8; }
+        .product-search-btn:hover { background: #e0e7ff; }
+
+        /* Flight Results */
+        .flight-form-box { background: white; padding: 16px; border-radius: 8px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .flight-form-box h3 { margin-bottom: 12px; font-size: 16px; }
+        .flight-form { display: block; }
+        .flight-form-grid { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:10px; align-items:end; }
+        .flight-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .flight-form-group label { font-size: 12px; font-weight: 600; color: #666; }
+        .flight-form-group input, .flight-form-group select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background:#fff; }
+        .flight-form .flight-submit { padding: 9px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; height: 38px; }
+        .flight-form button:hover { background: #1d4ed8; }
+
+        /* Flight List */
+        .flights-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .flight-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; transition: all 0.2s; }
+        .flight-row:hover { background: #f9fafb; border-color: #2563eb; }
+        
+        .flight-airline { flex: 1; min-width: 80px; font-weight: 600; font-size: 13px; }
+        .flight-times { flex: 1.7; min-width: 150px; font-size: 14px; font-weight: 600; }
+        .flight-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; font-weight: 500; color: #6b7280; }
+        .flight-meta span { background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 6px; }
+        .flight-duration { flex: 0.8; min-width: 60px; text-align: center; font-size: 12px; color: #666; }
+        .flight-route { flex: 0.8; min-width: 70px; text-align: center; font-size: 12px; color: #666; }
+        .flight-price { flex: 1; min-width: 100px; text-align: right; font-size: 16px; font-weight: 700; color: #2563eb; }
+
+        /* Autocomplete dropdown */
+        .autocomplete-wrap { position: relative; }
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            box-shadow: 0 8px 20px rgba(2,6,23,0.08);
+            display: none;
+        }
+        .autocomplete-item { padding: 10px 12px; cursor: pointer; transition: background 0.15s ease; }
+        .autocomplete-item:hover,
+        .autocomplete-item.active { background: #f1f5f9; }
+        .autocomplete-item .city { font-weight: 700; color: #0f172a; }
+        .autocomplete-item .airport { color: #475569; font-size: 0.9rem; }
+        .autocomplete-item .code { font-weight: 800; color: #2563eb; }
+
+        @media (max-width:900px) {
+            .flight-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .flight-submit { grid-column: 1 / -1; }
+        }
+
+        /* Alerts */
+        .alert { padding: 12px 14px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
+        .alert-info { background: #dbeafe; border: 1px solid #93c5fd; color: #0c4a6e; }
+        .alert.error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; }
+
+        /* Form styles */
+        .search-input-group { display: flex; gap: 8px; margin: 16px 0; }
+        .search-input-group input { flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .search-input-group button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .search-input-group button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+       <div class="header">
+        <div class="logo">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Finda AI</span>
+        </div>
+        <button class="new-chat-btn" onclick="window.location.href='/?new_chat=true'">
+            <i class="fas fa-plus"></i> Yeni Sohbet
+        </button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- WELCOME SCREEN -->
+        <div class="welcome-screen" id="welcome-screen">
+            <h1>👋 Merhaba!</h1>
+            <p>Size nasıl yardımcı olabilirim?</p>
+            <div class="suggestions">
+                <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='en iyi telefon modelleri';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">📱 Telefon</div>
+                <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='ucuz laptop';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">💻 Laptop</div>
+                <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='kulaklık';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">🎧 Kulaklık</div>
+                <div class="suggestion-card" onclick="document.querySelector('#product-search-input').value='uçuş ara';document.querySelector('#product-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">✈️ Uçuş</div>
+            </div>
+        </div>
+
+        <div id="flow-container"></div>
+        <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+            <div class="loading-card">
+                <div class="spinner"></div>
+                <div class="loading-text">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <!-- PRODUCT SEARCH PROMPT -->
+        <div class="prompt-container">
+            <form method="post" id="product-form" action="{% url 'home' %}">
+                {% csrf_token %}
+                <div class="quick-actions">
+                    <button type="button" class="quick-actions-btn" aria-label="Hızlı seçenekler">+</button>
+                    <div class="quick-actions-menu">
+                        <button type="button">Barkodla arama</button>
+                        <button type="button">Resim ile arama</button>
+                    </div>
+                </div>
+                <input type="text" name="query" id="product-search-input" placeholder="Find A flight,phone,product...">
+                <button type="submit">Gönder</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <button onclick="closeProductModal()" class="close-btn">&times;</button>
+            <div><img id="modalImage" src="" alt=""></div>
+            <div class="modal-body">
+                <h2 id="modalTitle"></h2>
+                <p id="modalPrice" class="price"></p>
+                <div id="modalThumbs" class="modal-thumbs"></div>
+                <p id="modalDescription"></p>
+                <p id="modalSite"></p>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <a id="modalLink" target="_blank" class="btn btn-primary">Mağazaya Git</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'core/js/home.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
+        function setLoading(isLoading) {
+            const overlay = document.getElementById('loading-overlay');
+            if (!overlay) return;
+            overlay.classList.toggle('visible', isLoading);
+            overlay.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+        }
+        window.setLoading = setLoading;
+
+        const airports = [
+            { code: "IST", city: "Istanbul", name: "Istanbul Airport" },
+            { code: "SAW", city: "Istanbul", name: "Sabiha Gökçen Airport" },
+            { code: "ESB", city: "Ankara", name: "Esenboğa Airport" },
+            { code: "ADB", city: "Izmir", name: "Adnan Menderes Airport" },
+            { code: "AYT", city: "Antalya", name: "Antalya Airport" },
+            { code: "DLM", city: "Dalaman", name: "Dalaman Airport" },
+            { code: "BJV", city: "Bodrum", name: "Milas-Bodrum Airport" },
+            { code: "TZX", city: "Trabzon", name: "Trabzon Airport" },
+            { code: "ADA", city: "Adana", name: "Şakirpaşa Airport" },
+            { code: "GZT", city: "Gaziantep", name: "Gaziantep Airport" },
+            { code: "JFK", city: "New York", name: "John F. Kennedy International" },
+            { code: "LGA", city: "New York", name: "LaGuardia Airport" },
+            { code: "EWR", city: "Newark", name: "Newark Liberty International" },
+            { code: "LHR", city: "London", name: "Heathrow Airport" },
+            { code: "LGW", city: "London", name: "Gatwick Airport" },
+            { code: "CDG", city: "Paris", name: "Charles de Gaulle Airport" },
+            { code: "AMS", city: "Amsterdam", name: "Schiphol Airport" },
+            { code: "FRA", city: "Frankfurt", name: "Frankfurt Airport" },
+            { code: "MUC", city: "Munich", name: "Munich Airport" },
+            { code: "DXB", city: "Dubai", name: "Dubai International" },
+            { code: "DOH", city: "Doha", name: "Hamad International" },
+            { code: "AUH", city: "Abu Dhabi", name: "Abu Dhabi International" },
+            { code: "FCO", city: "Rome", name: "Fiumicino Airport" },
+            { code: "MAD", city: "Madrid", name: "Barajas Airport" },
+            { code: "BCN", city: "Barcelona", name: "El Prat Airport" }
+        ];
+
+        function setupAutocomplete(inputId, listId) {
+            const input = document.getElementById(inputId);
+            const list = document.getElementById(listId);
+            if (!input || !list) return;
+
+            let currentIndex = -1;
+
+            function closeList() {
+                list.style.display = "none";
+                list.innerHTML = "";
+                currentIndex = -1;
+            }
+
+            function renderList(matches) {
+                if (!matches.length) {
+                    closeList();
+                    return;
+                }
+                list.innerHTML = matches.map((a, idx) => {
+                    return `
+                        <div class="autocomplete-item" data-index="${idx}">
+                            <div class="city">${a.city} <span class="code">(${a.code})</span></div>
+                            <div class="airport">${a.name}</div>
+                        </div>
+                    `;
+                }).join("");
+                list.style.display = "block";
+            }
+
+            function handleSelection(airport) {
+                input.value = `${airport.city} - ${airport.name} (${airport.code})`;
+                closeList();
+            }
+
+            input.addEventListener("input", () => {
+                const value = input.value.trim().toLowerCase();
+                if (!value) {
+                    closeList();
+                    return;
+                }
+                const matches = airports.filter(a => {
+                    return (
+                        a.city.toLowerCase().includes(value) ||
+                        a.name.toLowerCase().includes(value) ||
+                        a.code.toLowerCase().includes(value)
+                    );
+                });
+                renderList(matches);
+            });
+
+            list.addEventListener("click", (e) => {
+                const item = e.target.closest(".autocomplete-item");
+                if (!item) return;
+                const idx = parseInt(item.dataset.index, 10);
+                const value = input.value.trim().toLowerCase();
+                const matches = airports.filter(a => {
+                    return (
+                        a.city.toLowerCase().includes(value) ||
+                        a.name.toLowerCase().includes(value) ||
+                        a.code.toLowerCase().includes(value)
+                    );
+                });
+                if (matches[idx]) handleSelection(matches[idx]);
+            });
+
+            input.addEventListener("keydown", (e) => {
+                const items = list.querySelectorAll(".autocomplete-item");
+                if (!items.length) return;
+
+                if (e.key === "ArrowDown") {
+                    currentIndex = (currentIndex + 1) % items.length;
+                } else if (e.key === "ArrowUp") {
+                    currentIndex = (currentIndex - 1 + items.length) % items.length;
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (currentIndex >= 0) {
+                        items[currentIndex].click();
+                    }
+                } else if (e.key === "Escape") {
+                    closeList();
+                }
+
+                items.forEach((item, i) => {
+                    item.classList.toggle("active", i === currentIndex);
+                });
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!input.contains(e.target) && !list.contains(e.target)) {
+                    closeList();
+                }
+            });
+        }
+
+        function normalizeFlightInputs(form) {
+            const origin = form.querySelector('input[name="origin"]');
+            const destination = form.querySelector('input[name="destination"]');
+            const pickCode = (value) => {
+                const match = /\(([A-Z]{3})\)/i.exec(value || "");
+                return match ? match[1].toUpperCase() : value;
+            };
+            if (origin && origin.value) origin.value = pickCode(origin.value);
+            if (destination && destination.value) destination.value = pickCode(destination.value);
+        }
+
+        function initFlightWidgets() {
+            setupAutocomplete("flight-origin", "flight-origin-list");
+            setupAutocomplete("flight-destination", "flight-destination-list");
+            const dateInput = document.getElementById("flight-date");
+            if (dateInput && window.flatpickr) {
+                flatpickr(dateInput, { dateFormat: "Y-m-d", minDate: "today" });
+            }
+        }
+
+        async function submitSearchAjax(form, extraParams = {}) {
+            const flow = document.getElementById('flow-container');
+            if (!flow) return;
+            const formData = new FormData(form);
+            Object.entries(extraParams).forEach(([key, val]) => formData.set(key, val));
+
+            const minLoadingMs = 400;
+            const startedAt = Date.now();
+            setLoading(true);
+            try {
+                const res = await fetch("{% url 'search_ajax' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                });
+
+                const html = await res.text();
+            if (html.trim()) {
+                flow.insertAdjacentHTML('beforeend', html);
+                const welcome = document.getElementById('welcome-screen');
+                if (welcome) welcome.style.display = 'none';
+                if (typeof showAISummaryAfterImages === 'function') {
+                    showAISummaryAfterImages();
+                }
+                if (typeof colorizeAirlines === 'function') {
+                    colorizeAirlines(flow);
+                }
+                initFlightWidgets();
+                const last = flow.lastElementChild;
+                if (last) {
+                    last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+            } finally {
+                const elapsed = Date.now() - startedAt;
+                const remaining = Math.max(0, minLoadingMs - elapsed);
+                setTimeout(() => setLoading(false), remaining);
+            }
+        }
+
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (form.matches('#product-form') || form.classList.contains('flight-form')) {
+                event.preventDefault();
+                if (form.classList.contains('flight-form')) {
+                    normalizeFlightInputs(form);
+                }
+                submitSearchAjax(form);
+                const input = document.getElementById('product-search-input');
+                if (input) input.value = '';
+            }
+        });
+
+        window.searchProductBySameBrand = function (productTitle, site) {
+            const form = document.getElementById('product-form');
+            if (!form) return;
+            submitSearchAjax(form, { query: productTitle, compare: 'true', site: site || '' });
+        };
+
+        initFlightWidgets();
+    </script>
+</body>
+</html>

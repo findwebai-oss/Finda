@@ -1,0 +1,389 @@
+<div class="section-box result-block">
+    {% if flight_block %}
+        {% if flight_intent_detected %}
+        <div class="alert alert-info">
+            <strong>✈️ Uçuş mu arıyorsunuz?</strong> "{{ flight_query }}" uçuş ile ilgili görünüyor. Aşağıdan detaylı arama yapabilirsiniz.
+        </div>
+        {% endif %}
+        <div class="flight-form-box">
+            <h3>✈️ Uçuş Ara</h3>
+            <form method="post" action="{% url 'home' %}" class="flight-form">
+                {% csrf_token %}
+                <div class="flight-form-grid">
+                    <div class="flight-form-group autocomplete-wrap">
+                        <label>Kalkış</label>
+                        <input type="text" name="origin" id="flight-origin" placeholder="Şehir veya Havalimanı" value="{{ flight_form_data.origin }}" autocomplete="off" required>
+                        <div class="autocomplete-list" id="flight-origin-list"></div>
+                    </div>
+                    <div class="flight-form-group autocomplete-wrap">
+                        <label>Varış</label>
+                        <input type="text" name="destination" id="flight-destination" placeholder="Şehir veya Havalimanı" value="{{ flight_form_data.destination }}" autocomplete="off" required>
+                        <div class="autocomplete-list" id="flight-destination-list"></div>
+                    </div>
+                    <div class="flight-form-group">
+                        <label>Tarih</label>
+                        <input type="text" name="date" id="flight-date" placeholder="Tarih seç" value="{{ flight_form_data.date }}" required>
+                    </div>
+                    <div class="flight-form-group">
+                        <label>Yolcu</label>
+                        <select name="adults">
+                            {% for n in "123456"|make_list %}
+                            <option value="{{ n }}" {% if flight_form_data.adults|stringformat:"s" == n %}selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="flight-submit">Uçuş Ara</button>
+                </div>
+            </form>
+        </div>
+
+        {% if flight_results %}
+        <div id="flight-results" style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+            {% if flight_results.error %}
+            <div class="alert error">
+                <strong>Hata:</strong> {{ flight_results.error }}
+            </div>
+            {% elif flight_results.data %}
+            <h3 style="margin-bottom: 12px;">{{ flight_results.data|length }} Uçuş Bulundu</h3>
+            <div class="flights-list">
+                {% for offer in flight_results.data %}
+                <div class="flight-row">
+                    <div class="flight-airline">
+                        {% if offer.validatingAirlineCodes %}
+                        <span class="airline-badge" data-airline="{{ offer.airline_code|default:offer.validatingAirlineCodes.0 }}">
+                            <span class="airline-logo">{{ offer.airline_code|default:offer.validatingAirlineCodes.0 }}</span>
+                            <span class="airline-name">{{ offer.airline_name|default:offer.validatingAirlineCodes.0 }}</span>
+                        </span>
+                        {% else %}
+                        <span class="airline-badge" data-airline="XX">
+                            <span class="airline-logo">XX</span>
+                            <span class="airline-name">Airline</span>
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flight-times">
+                        {% if offer.itineraries.0.segments.0 %}
+                        {{ offer.itineraries.0.segments.0.departure.at|slice:"11:16" }} →
+                        {% with seg=offer.itineraries.0.segments|last %}
+                        {{ seg.arrival.at|slice:"11:16" }}
+                        {% endwith %}
+                        {% endif %}
+                        <div class="flight-meta">
+                            {% if offer.validatingAirlineCodes %}
+                            <span>Firma: {{ offer.validatingAirlineCodes.0 }}</span>
+                            {% endif %}
+                            {% if offer.itineraries.0.segments.0 %}
+                            <span>Uçuş: {{ offer.itineraries.0.segments.0.carrierCode }}{{ offer.itineraries.0.segments.0.number }}</span>
+                            {% endif %}
+                            {% if offer.itineraries.0.segments %}
+                            <span>Aktarma: {{ offer.itineraries.0.segments|length|add:"-1" }}</span>
+                            {% endif %}
+                            {% if offer.travelerPricings.0.fareDetailsBySegment.0.cabin %}
+                            <span>Kabin: {{ offer.travelerPricings.0.fareDetailsBySegment.0.cabin }}</span>
+                            {% endif %}
+                            {% if offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags %}
+                            <span>Bagaj:
+                                {% if offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags.weight %}
+                                {{ offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags.weight }}{{ offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags.weightUnit }}
+                                {% elif offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags.quantity %}
+                                {{ offer.travelerPricings.0.fareDetailsBySegment.0.includedCheckedBags.quantity }} parça
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flight-duration">
+                        {% if offer.itineraries.0.duration %}
+                        {{ offer.itineraries.0.duration|slice:"2:" }}
+                        {% else %}
+                        --
+                        {% endif %}
+                    </div>
+
+                    <div class="flight-route">
+                        {% if offer.itineraries.0.segments.0 %}
+                        {{ offer.itineraries.0.segments.0.departure.iataCode }} →
+                        {% with seg=offer.itineraries.0.segments|last %}
+                        {{ seg.arrival.iataCode }}
+                        {% endwith %}
+                        {% endif %}
+                    </div>
+
+                    <div class="flight-price">
+                        {% if offer.price.total %}
+                        <span class="price-badge">{{ offer.price.total }} {{ offer.price.currency }}</span>
+                        {% else %}
+                        --
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if flight_ai_summary %}
+            <div class="chat-message assistant ai-inline">
+                <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                <div class="message-bubble">{{ flight_ai_summary }}</div>
+            </div>
+            {% endif %}
+            {% else %}
+            <p style="text-align: center; color: #666; padding: 20px;">Uçuş bulunamadı.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+
+    {% if new_messages %}
+<div class="chat-container">
+
+    {% for message in new_messages %}
+
+    <div class="chat-message {{ message.role }}">
+        <div class="message-avatar">
+            {% if message.role == "user" %}
+            <i class="fas fa-user"></i>
+            {% else %}
+            <i class="fas fa-robot"></i>
+            {% endif %}
+        </div>
+        <div class="message-bubble">{{ message.content }}</div>
+    </div>
+
+    {% if message.role == "assistant" %}
+
+        {% if message.products %}
+        <div class="products-section">
+            <div class="products-grid">
+                {% for product in message.products %}
+                <div
+                    class="product-card"
+                    onclick="openProductModalFromElement(this)"
+                    data-product-title="{{ product.title }}"
+                    data-product-price="{{ product.price }}"
+                    data-product-image="{{ product.image }}"
+                    data-product-images="{% if product.images %}{{ product.images|join:'|' }}{% endif %}"
+                    data-product-description="{{ product.description }}"
+                    data-product-site="{{ product.site }}"
+                    data-product-link="{{ product.link }}"
+                >
+                    <div class="product-image">
+                        {% if product.image %}
+                        <img src="{{ product.image }}" alt="{{ product.title }}">
+                        {% endif %}
+                    </div>
+                    <div class="product-body">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">{{ product.price }}</div>
+                        <div class="product-store site-{{ product.site_color }}">{{ product.site }}</div>
+                        {% if product.rating %}
+                        <div class="product-rating">
+                            <span class="star-rating star-{{ product.site_color }}" style="--rating: {{ product.rating|default:0 }};"></span>
+                            <span class="rating-text">{{ product.rating }}</span>
+                            <span class="rating-count">({{ product.review_count }})</span>
+                        </div>
+                        {% endif %}
+                        {% if product.review_summary %}
+                        <div class="product-review">{{ product.review_summary }}</div>
+                        {% else %}
+                        <div class="product-review fallback-review">
+                            {% if product.delivery_info %}
+                            {{ product.delivery_info }}
+                            {% else %}
+                            Hızlı teslimat
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% if product.tags %}
+                        <div class="product-tags">
+                            {% for tag in product.tags %}
+                            <span class="ai-tag tag-price">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="product-actions">
+                            <a class="btn btn-primary" data-loading="true" href="{{ product.link }}" target="_blank">Magazaya Git</a>
+                            <button
+                                type="button"
+                                class="btn btn-outline"
+                                onclick="event.stopPropagation(); searchProductBySameBrand('{{ product.title|escapejs }}', '{{ product.site|escapejs }}')"
+                            >
+                                Karsilastir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if message.ai_summary and message.ai_summary.data and message.ai_summary.data.commentary %}
+        <div class="chat-message assistant ai-inline">
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-bubble">{{ message.ai_summary.data.commentary }}</div>
+        </div>
+        {% endif %}
+
+        {% if message.compare_products %}
+        <div class="products-section compare-section" id="compare-section-{{ forloop.counter }}">
+            <div class="products-compare">
+                {% with main=message.compare_products.0 %}
+                <div class="compare-main">
+                    <div
+                        class="compare-large"
+                        onclick="openProductModalFromElement(this)"
+                        data-product-title="{{ main.title }}"
+                        data-product-price="{{ main.price }}"
+                        data-product-image="{{ main.image }}"
+                        data-product-images="{% if main.images %}{{ main.images|join:'|' }}{% endif %}"
+                        data-product-description="{{ main.description }}"
+                        data-product-site="{{ main.site }}"
+                        data-product-link="{{ main.link }}"
+                    >
+                        <div class="compare-media">
+                            <div class="product-image">
+                                {% if main.image %}
+                                <img src="{{ main.image }}" alt="{{ main.title }}">
+                                {% endif %}
+                            </div>
+                            {% if main.images or main.image or main.site %}
+                            <div class="thumb-strip">
+                                {% if main.images %}
+                                    {% for img in main.images %}
+                                    <img src="{{ img }}" alt="{{ main.title }}" data-image="{{ img }}">
+                                    {% endfor %}
+                                {% elif main.image %}
+                                    <img src="{{ main.image }}" alt="{{ main.title }}" data-image="{{ main.image }}">
+                                {% endif %}
+                                {% if main.site %}
+                                <div class="thumb-fallback site-{{ main.site_color }}" title="{{ main.site }}">{{ main.site|slice:":2" }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="product-body">
+                            <div class="product-header">
+                                <span class="site-badge site-{{ main.site_color }}">{{ main.site }}</span>
+                                {% if main.rating %}
+                                <span class="stat-label">Puan:</span>
+                                <span class="stat-value">{{ main.rating }} ({{ main.review_count }})</span>
+                                {% endif %}
+                                {% if main.delivery_info %}
+                                <span class="stat-label">Kargo:</span>
+                                <span class="stat-value">{{ main.delivery_info }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="product-title">{{ main.title }}</div>
+                            <div class="product-price">{{ main.price }}</div>
+                            <div class="compare-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">Mağaza</span>
+                                    <span class="meta-value site-{{ main.site_color }}">{{ main.site }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Yıldız</span>
+                                    <span class="star-rating star-{{ main.site_color }}" style="--rating: {{ main.rating|default:0 }};"></span>
+                                    <span class="meta-value">{{ main.rating|default:"-" }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Yorum</span>
+                                    <span class="meta-value">{{ main.review_count|default:"0" }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Kargo</span>
+                                    <span class="meta-value">{{ main.delivery_info|default:"-" }}</span>
+                                </div>
+                            </div>
+                            {% if main.review_summary %}
+                            <div class="compare-review">{{ main.review_summary }}</div>
+                            {% endif %}
+                            {% if main.description %}
+                            <p class="compare-desc">{{ main.description }}</p>
+                            {% endif %}
+                            <div class="product-actions">
+                                <a class="btn btn-primary" data-loading="true" href="{{ main.link }}" target="_blank" onclick="event.stopPropagation();">Magazaya Git</a>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline"
+                                    onclick="event.stopPropagation(); searchProductBySameBrand('{{ main.title|escapejs }}', '{{ main.site|escapejs }}')"
+                                >
+                                    Karsilastir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="compare-thumbs">
+                        {% for product in message.compare_products %}
+                        {% if not forloop.first %}
+                        <div
+                            class="thumb-card"
+                            onclick="swapMainProduct(this)"
+                            data-product-title="{{ product.title }}"
+                            data-product-price="{{ product.price }}"
+                            data-product-image="{{ product.image }}"
+                            data-product-images="{% if product.images %}{{ product.images|join:'|' }}{% endif %}"
+                            data-product-description="{{ product.description }}"
+                            data-product-site="{{ product.site }}"
+                            data-product-link="{{ product.link }}"
+                        >
+                            <div class="thumb-row">
+                                <div class="thumb-col thumb-image">
+                                    {% if product.image %}
+                                    <img src="{{ product.image }}" alt="{{ product.title }}">
+                                    {% endif %}
+                                </div>
+                                <div class="thumb-col thumb-title">{{ product.title }}</div>
+                                <div class="thumb-col thumb-price">{{ product.price }}</div>
+                                <div class="thumb-col thumb-site site-{{ product.site_color }}">{{ product.site }}</div>
+                                <div class="thumb-col thumb-rating">
+                                    {% if product.rating %}
+                                    <span class="star-rating small star-{{ product.site_color }}" style="--rating: {{ product.rating|default:0 }};"></span>
+                                    <span class="rating-text">{{ product.rating }}</span>
+                                    <span class="rating-count">({{ product.review_count }})</span>
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </div>
+                                <div class="thumb-col thumb-delivery">
+                                    {% if product.delivery_info %}
+                                    {{ product.delivery_info }}
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </div>
+                                <div class="thumb-col thumb-desc">
+                                    {% if product.description %}
+                                    {{ product.description }}
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </div>
+                                <div class="thumb-col thumb-action">
+                                    <a class="thumb-button" data-loading="true" href="{{ product.link }}" target="_blank" onclick="event.stopPropagation();">Magazaya Git</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if message.compare_ai_summary and message.compare_ai_summary.data and message.compare_ai_summary.data.commentary %}
+        <div class="chat-message assistant ai-inline">
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-bubble">{{ message.compare_ai_summary.data.commentary }}</div>
+        </div>
+        {% endif %}
+
+    {% endif %}
+
+    {% endfor %}
+
+</div>
+{% endif %}
