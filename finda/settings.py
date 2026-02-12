@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-
+ALLOWED_HOSTS = ["finda-1cjt.onrender.com", "localhost", "127.0.0.1"]
 CSRF_TRUSTED_ORIGINS = [
     "https://finda.onrender.com",
 ]
