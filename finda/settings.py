@@ -109,9 +109,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # =====================
 # API KEYS (ENV)
 # =====================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-GROK_API_KEY = os.getenv("GROK_API_KEY")
-AMADEUS_API_KEY = os.getenv("AMADEUS_API_KEY")
-AMADEUS_API_SECRET = os.getenv("AMADEUS_API_SECRET")
-SERP_API_KEY = os.getenv("SERP_API_KEY")
+def get_env(key: str, default="") -> str:
+    """Env variable al, None olsa bile güvenli string dön."""
+    return (os.getenv(key, default) or "").strip()
+
+GEMINI_API_KEY = get_env("GEMINI_API_KEY")
+OPENROUTER_API_KEY = get_env("OPENROUTER_API_KEY")
+GROK_API_KEY = get_env("GROK_API_KEY")
+AMADEUS_API_KEY = get_env("AMADEUS_API_KEY")
+AMADEUS_API_SECRET = get_env("AMADEUS_API_SECRET")
+SERP_API_KEY = get_env("SERP_API_KEY")
