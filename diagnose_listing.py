@@ -26,7 +26,7 @@ def test_ai():
     print(f"Result: {res}")
 
 def test_models():
-    import google.generativeai as genai
+    from google import genai
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
     print("\nListing available models...")
