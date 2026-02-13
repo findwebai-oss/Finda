@@ -189,7 +189,7 @@ def search_ajax(request):
         if analysis.get('error'):
             chat_history.append({
                 'role': 'assistant',
-                'content': f"?zg?n?m, bir hata olu?tu: {analysis['error']}"
+                'content': f"üzgünüm, bir hata oluştu: {analysis['error']}"
             })
 
         elif analysis['intent'] == 'shopping' and analysis.get('query'):
@@ -209,14 +209,14 @@ def search_ajax(request):
                 if compare_mode:
                     chat_history.append({
                         'role': 'assistant',
-                        'content': analysis['response'] or f'"{query}" i?in kar??la?t?rma sonu?lar?:',
+                        'content': analysis['response'] or f'"{query}" için karşılaştırma sonuçları:',
                         'compare_products': results,
                         'compare_ai_summary': ai_summary
                     })
                 else:
                     chat_history.append({
                         'role': 'assistant',
-                        'content': analysis['response'] or f'"{query}" i?in {len(results)} ?r?n buldum:',
+                        'content': analysis['response'] or f'"{query}" için {len(results)} ürün buldum:',
                         'products': results,
                         'ai_summary': ai_summary
                     })
@@ -224,7 +224,7 @@ def search_ajax(request):
             else:
                 chat_history.append({
                     'role': 'assistant',
-                    'content': f'"{query}" i?in ?r?n bulunamad?. Ba?ka bir ?ey aramak ister misiniz?'
+                    'content': f'"{query}" için ürün bulunamadı. Başka bir şey aramak ister misiniz?'
                 })
 
         else:
