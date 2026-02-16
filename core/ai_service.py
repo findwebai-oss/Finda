@@ -16,10 +16,10 @@ from django.core.cache import cache
 
 GEMINI_API_KEY = getattr(settings, "GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", "")).strip()
 OPENROUTER_API_KEY = getattr(settings, "OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", "")).strip()
-GROK_API_KEY = getattr(settings, "GROK_API_KEY", os.getenv("GROK_API_KEY", "")).strip()
+GROQ_API_KEY = getattr(settings, "GROQ_API_KEY", os.getenv("GROQ_API_KEY", "")).strip()
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-GROK_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 OPENROUTER_HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -28,8 +28,8 @@ OPENROUTER_HEADERS = {
     "Content-Type": "application/json"
 }
 
-GROK_HEADERS = {
-    "Authorization": f"Bearer {GROK_API_KEY}",
+GROQ_HEADERS = {
+    "Authorization": f"Bearer {GROQ_API_KEY}",
     "Content-Type": "application/json"
 }
 
@@ -207,8 +207,8 @@ def analyze_products(products):
                 "source": "gemini"
             }
 
-    # 2️⃣ Grok (High-Speed Fallback)
-    if GROK_API_KEY:
+    # 2️⃣ Groq (High-Speed Fallback)
+    if GROQ_API_KEY:
         result = ask_groq(prompt, "llama-3.3-70b-versatile")
         if result:
             set_cached_analysis(products, result)
@@ -280,12 +280,12 @@ def ask_groq(prompt, model_name):
             "temperature": 0.3,
             "response_format": {"type": "json_object"}
         }
-        res = requests.post(GROK_URL, headers=GROK_HEADERS, json=data, timeout=10)
+        res = requests.post(GROQ_URL, headers=GROQ_HEADERS, json=data, timeout=10)
         if res.status_code == 200:
             content = res.json()["choices"][0]["message"]["content"]
             return extract_json(content)
     except Exception as e:
-        print(f"DEBUG: Grok failed: {str(e)}")
+        print(f"DEBUG: Groq failed: {str(e)}")
     return None
 
 def ask_openrouter(prompt, model_name):
