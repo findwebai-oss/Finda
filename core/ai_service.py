@@ -259,13 +259,17 @@ Yanıtını MUTLAKA şu JSON formatında ver, başka metin ekleme:
 
 def ask_gemini(prompt):
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        for model_name in ["gemini-1.5-flash", "gemini-1.5-pro"]:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        for model_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
             try:
-                model = genai.GenerativeModel(model_name)
-                response = model.generate_content(prompt)
-                if response and response.text:
-                    return extract_json(response.text)
+                response = client.models.generate_content(model=model_name, contents=prompt)
+                text = getattr(response, "text", None)
+                if text:
+                    parsed = extract_json(text)
+                    if parsed:
+                        return parsed
+                    # Graceful fallback: still return a commentary when model doesn't obey JSON.
+                    return {"commentary": text.strip()[:900]}
             except Exception as e:
                 print(f"DEBUG: Gemini {model_name} failed: {str(e)}")
                 if "429" in str(e): break
@@ -283,7 +287,10 @@ def ask_groq(prompt, model_name):
         res = requests.post(GROQ_URL, headers=GROQ_HEADERS, json=data, timeout=10)
         if res.status_code == 200:
             content = res.json()["choices"][0]["message"]["content"]
-            return extract_json(content)
+            parsed = extract_json(content)
+            if parsed:
+                return parsed
+            return {"commentary": str(content).strip()[:900]}
     except Exception as e:
         print(f"DEBUG: Groq failed: {str(e)}")
     return None
@@ -297,7 +304,10 @@ def ask_openrouter(prompt, model_name):
         res = requests.post(OPENROUTER_URL, headers=OPENROUTER_HEADERS, json=data, timeout=15)
         if res.status_code == 200:
             content = res.json()["choices"][0]["message"]["content"]
-            return extract_json(content)
+            parsed = extract_json(content)
+            if parsed:
+                return parsed
+            return {"commentary": str(content).strip()[:900]}
     except: pass
     return None
 
